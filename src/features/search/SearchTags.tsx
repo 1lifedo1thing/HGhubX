@@ -1,0 +1,140 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Loader } from "../../shared/ui/ios/effects";
+import { api } from "../../shared/api/api";
+import type { HotTagItem } from "../../shared/api/types";
+import { useContentPreferences } from "../../shared/model/contentPreferences";
+import { useStore } from "../../shared/model/store";
+import { IFireF, IRefresh } from "../../shared/ui/icons";
+import { Button, Surface } from "../../shared/ui/ios/controls";
+import { tr } from "../../shared/i18n";
+
+const BATCH_SIZE = 10;
+const HOT_TAGS_STORAGE_KEY = "hghubx_hot_tags_cache_v1";
+const hotTagsMemoryCache = new Map<string, HotTagItem[]>();
+const revalidatedKeys = new Set<string>();
+
+function readHotTagsCache(key: string): HotTagItem[] | null {
+  const mem = hotTagsMemoryCache.get(key);
+  if (mem) return mem;
+  try {
+    const raw = localStorage.getItem(HOT_TAGS_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { key?: unknown; items?: unknown } | null;
+    if (!parsed || parsed.key !== key || !Array.isArray(parsed.items)) return null;
+    const items = parsed.items.filter(
+      (x): x is HotTagItem => !!x && typeof x === "object" && typeof (x as HotTagItem).name === "string",
+    );
+    if (!items.length) return null;
+    hotTagsMemoryCache.set(key, items);
+    return items;
+  } catch {
+    return null;
+  }
+}
+
+function writeHotTagsCache(key: string, items: HotTagItem[]): void {
+  hotTagsMemoryCache.set(key, items);
+  try {
+    localStorage.setItem(HOT_TAGS_STORAGE_KEY, JSON.stringify({ key, items }));
+  } catch { /* Storage may be unavailable. */ }
+}
+
+/** Curated popular tags returned by the active source. */
+export function SearchTags({ active }: { active: boolean }) {
+  const { push, lineEpoch, activeSource } = useStore();
+  const cacheKey = `${activeSource?.id ?? "default"}:${lineEpoch}`;
+  const { preferences, isTagBlocked } = useContentPreferences();
+  const [tags, setTags] = useState<HotTagItem[] | null>(() => readHotTagsCache(cacheKey));
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [batch, setBatch] = useState(0);
+  const busy = useRef(false);
+  const sequence = useRef(0);
+  const loadedKey = useRef("");
+
+  const load = useCallback(async (manual = false) => {
+    if (busy.current) return;
+    busy.current = true;
+    const token = ++sequence.current;
+    const cached = readHotTagsCache(cacheKey);
+    if (manual || !cached) {
+      setLoading(true);
+      setError("");
+    }
+    try {
+      const response = await api.hotTags();
+      if (!Array.isArray(response?.items)) throw new Error(tr("标签数据格式异常，请重试"));
+      const seen = new Set<string>();
+      const unique: HotTagItem[] = [];
+      for (const item of response.items) {
+        const name = typeof item?.name === "string" ? item.name.trim() : "";
+        if (!name || seen.has(name)) continue;
+        seen.add(name);
+        unique.push({ name, slug: typeof item.slug === "string" ? item.slug : "" });
+      }
+      if (sequence.current !== token) return;
+      loadedKey.current = cacheKey;
+      revalidatedKeys.add(cacheKey);
+      writeHotTagsCache(cacheKey, unique);
+      setTags((prev) => {
+        if (!manual && prev && prev.length === unique.length && prev.every((item, idx) => item.name === unique[idx]?.name)) {
+          return prev;
+        }
+        return unique;
+      });
+      if (manual || !cached) setBatch(0);
+      setError("");
+    } catch (cause) {
+      if (sequence.current === token && (manual || !cached)) {
+        setError(cause instanceof Error ? cause.message : tr("标签加载失败，请重试"));
+      }
+    } finally {
+      if (sequence.current === token) { busy.current = false; setLoading(false); }
+    }
+  }, [cacheKey]);
+
+  useEffect(() => () => { sequence.current++; busy.current = false; }, []);
+  useEffect(() => {
+    if (!active) return;
+    const cached = readHotTagsCache(cacheKey);
+    if (cached && loadedKey.current !== cacheKey) {
+      setTags(cached);
+      loadedKey.current = cacheKey;
+      if (!revalidatedKeys.has(cacheKey)) void load(false);
+      return;
+    }
+    if (loadedKey.current !== cacheKey) void load(false);
+  }, [active, cacheKey, load]);
+  const totalLoaded = tags?.length ?? 0;
+  const available = tags ? (preferences.paused ? tags : tags.filter(tag => !isTagBlocked(tag.name))) : [];
+  const count = available.length;
+  const batchCount = Math.max(1, Math.ceil(count / BATCH_SIZE));
+  const safeBatch = batch % batchCount;
+  const visible = available.slice(safeBatch * BATCH_SIZE, (safeBatch + 1) * BATCH_SIZE);
+
+  return <Surface role="region" aria-label={tr("热门题材")} aria-busy={loading}
+    className="mt-4 rounded-(--r-md) bg-s2 p-3.5 a-rise">
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <h2 className="flex items-center gap-1.5 text-[14px] font-semibold text-on/90"><IFireF size={15} className="text-primary" />{tr("热门题材")}</h2>
+      <Button onClick={() => push({ kind: "tags" })} className="-mr-2 px-2 inline-flex items-center justify-end min-h-9 text-[12px] text-primary font-semibold pressable">{tr("全部标签 ›")}</Button>
+    </div>
+    {error && <p role="status" className="mt-2 text-[12px] text-mut break-words">
+      {totalLoaded > 0 ? tr("刷新失败，保留已加载标签。") : tr("标签暂未加载成功。")}{error}
+    </p>}
+    {count > 0 ? <div className="flex flex-wrap gap-2 mt-3">
+      {visible.map(tag => <Button key={tag.name}
+        onClick={() => push({ kind: "tag", tag: tag.name, name: tag.name })}
+        style={{ minBlockSize: 40 }} className="ios-filter-pill min-w-11 max-w-full whitespace-normal break-words text-left text-on/90">{tag.name}</Button>)}
+    </div> : !error && <p role="status" className="mt-3 text-[13px] text-mut">
+      {loading || tags === null ? tr("正在加载题材…") : totalLoaded > 0 ? tr("热门题材均已屏蔽，可在内容偏好中调整") : tr("暂无可用标签")}
+    </p>}
+    <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+      <Button onClick={() => void load(true)} disabled={loading} aria-label={tr("刷新题材")}
+        className="-ml-2 px-2 min-h-9 inline-flex items-center gap-1 text-[12px] text-mut pressable">
+        {loading ? <Loader className="w-3 h-3" /> : <IRefresh size={13} />}{loading ? tr("加载中…") : tr("刷新")}
+      </Button>
+      {count > BATCH_SIZE && <Button onClick={() => setBatch(value => (value + 1) % batchCount)}
+        className="-mr-2 px-2 min-h-9 inline-flex items-center justify-end text-[12px] text-primary pressable">{tr("换一批")}</Button>}
+    </div>
+  </Surface>;
+}

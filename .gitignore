@@ -1,0 +1,35 @@
+# 依赖
+node_modules/
+.pnpm-store/
+
+# 构建产物
+dist/
+dist-ssr/
+test-results/
+src-tauri/target/
+src-tauri/gen/
+# Android TV 临时覆盖配置（由 build-android-tv.mjs / tv.yml 生成）
+src-tauri/tauri.android.conf.json
+*.local
+
+# 编辑器 / 系统
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# 签名与密钥（务必不要提交）
+*.keystore
+*.jks
+*.p12
+*.pem
+.env
+.env.*
+
+# API
+docs/API.md
+
+# Agent instructions: AGENTS.md is tracked. Keep machine-local variants out.
+AGENTS.local.md
