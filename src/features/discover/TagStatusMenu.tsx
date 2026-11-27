@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as 
 import { Button } from "../../shared/ui/ios/controls";
 import { IChevronDown } from "../../shared/ui/icons";
 import { N_, tr } from "../../shared/i18n";
+import { registerOverlayBack } from "../../shared/lib/back";
 
 export type WorkStatus = "all" | "ongoing" | "finished";
 export type WorkStatusCounts = { ongoing: number; finished: number } | null;
@@ -46,9 +47,26 @@ export function TagStatusMenu({ status, counts, total, onChange, className = "" 
     const onPointerDown = (event: PointerEvent) => {
       if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
     };
-    document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
-  }, [open]);
+    const isCovered = () => !wrapRef.current || Boolean(wrapRef.current.closest("[inert]"));
+    const onEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.isComposing || isCovered()) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      close(true);
+    };
+    const removeBack = registerOverlayBack(() => {
+      if (isCovered()) return false;
+      close(true);
+      return true;
+    });
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onEscape, true);
+    return () => {
+      removeBack();
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onEscape, true);
+    };
+  }, [open, close]);
 
   useEffect(() => {
     if (!open) return;
@@ -68,6 +86,7 @@ export function TagStatusMenu({ status, counts, total, onChange, className = "" 
     const index = items.indexOf(document.activeElement as HTMLButtonElement);
     if (event.key === "Escape") {
       event.preventDefault();
+      event.stopPropagation();
       close(true);
     } else if (event.key === "Tab") {
       close();

@@ -63,6 +63,12 @@ export function PanelSwipeArea({ panel, onChange, rotated = false, allowPullDown
   const suppressClick = useRef(false);
   const suppressTimer = useRef<number | undefined>(undefined);
 
+  const clearClickSuppression = () => {
+    window.clearTimeout(suppressTimer.current);
+    suppressTimer.current = undefined;
+    suppressClick.current = false;
+  };
+
   const armClickSuppression = () => {
     window.clearTimeout(suppressTimer.current);
     suppressClick.current = true;
@@ -99,6 +105,7 @@ export function PanelSwipeArea({ panel, onChange, rotated = false, allowPullDown
   };
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    clearClickSuppression();
     if (e.pointerType === "touch" || !e.isPrimary || e.button !== 0) return;
     const start = canStart(e.target as Element, e.currentTarget);
     if (!start) return;
@@ -125,6 +132,7 @@ export function PanelSwipeArea({ panel, onChange, rotated = false, allowPullDown
     /* Touch events use native listeners because Pointer Events are cancelled once the browser
        takes over native scrolling; mouse and pen input still uses the Pointer Events above. */
     const begin = (event: TouchEvent) => {
+      clearClickSuppression();
       if (event.touches.length !== 1) { touchStart.current = null; return; }
       const touch = event.touches[0];
       const start = canStart(event.target as Element, area);

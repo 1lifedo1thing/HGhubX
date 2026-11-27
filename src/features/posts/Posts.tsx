@@ -1,7 +1,7 @@
 import { MediaCard } from "../../shared/ui/cards";
 import { Button, Surface } from "../../shared/ui/ios/controls";
 import { Loader } from "../../shared/ui/ios/effects";
-import { useEffect, useMemo, useRef, useState, type TouchEvent } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api, cover, fmt, isMobile } from "../../shared/api/api";
 import type { Post, PostCategory } from "../../shared/api/types";
 import { ACTION_TOAST_SLOT, useStore } from "../../shared/model/store";
@@ -15,6 +15,7 @@ import { FilteredContent } from "../../shared/ui/FilteredContent";
 import { TagBlockMenu } from "../../shared/ui/TagBlockMenu";
 import { useContentPreferences } from "../../shared/model/contentPreferences";
 import { usePaginatedList } from "../../shared/lib/usePaginatedList";
+import { useTabSwipe } from "../../shared/ui/hooks/useTabSwipe";
 import { CommentsPanel } from "../feed/Panels";
 import { formatPostTime, postCommentCount, postHot } from "./postData";
 import { tr } from "../../shared/i18n";
@@ -28,7 +29,6 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
   const [categories, setCategories] = useState<PostCategory[]>([]);
   const [selectedRoute, setSelectedRoute] = useState("");
   const [categoriesLoading, setCategoriesLoading] = useState(true);
-  const swipeStart = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     let alive = true;
     setSelectedRoute("");
@@ -64,28 +64,16 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
       ? api.postCategory(selectedRoute, next, 20, "latest")
       : Promise.resolve({ items: [] as Post[], pagination: { page: next, pages: 1, size: 20, total: 0 } }),
   });
-  const switchTab = (direction: 1 | -1) => {
-    if (categories.length < 2) return;
-    const index = categories.findIndex((c) => c.route === selectedRoute);
-    const target = categories[index + direction];
-    if (target) setSelectedRoute(target.route);
-  };
-  const onTouchStart = (event: TouchEvent<HTMLDivElement>) => {
-    if (categories.length < 2) return;
-    const touch = event.touches[0];
-    if (touch) swipeStart.current = { x: touch.clientX, y: touch.clientY };
-  };
-  const onTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
-    const start = swipeStart.current;
-    swipeStart.current = null;
-    if (!start || categories.length < 2) return;
-    const touch = event.changedTouches[0];
-    if (!touch) return;
-    const dx = touch.clientX - start.x;
-    const dy = touch.clientY - start.y;
-    if (Math.abs(dx) < 48 || Math.abs(dx) <= Math.abs(dy) * 1.4) return;
-    switchTab(dx < 0 ? 1 : -1);
-  };
+  const activeTabIndex = Math.max(0, categories.findIndex((c) => c.route === selectedRoute));
+  const tabSwipe = useTabSwipe<HTMLDivElement>({
+    rootRef: scrollRef,
+    tabIndex: activeTabIndex,
+    tabCount: categories.length,
+    onTabChange: (nextIndex) => {
+      const target = categories[nextIndex];
+      if (target) setSelectedRoute(target.route);
+    },
+  });
 
   return (
     <div className="ios-page absolute inset-0 bg-bg flex flex-col">
@@ -114,10 +102,10 @@ export function PostsPage({ onBack, wide }: { onBack: () => void; wide: boolean 
         )}
       </div>
       <div ref={scrollRef} data-posts-scroll aria-busy={loading} className="flex-1 scroll-y pt-3.5 pb-8"
-        style={{ touchAction: "pan-y" }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onTouchCancel={() => { swipeStart.current = null; }}>
+        onPointerDown={tabSwipe.onPointerDown}
+        onPointerUp={tabSwipe.onPointerUp}
+        onPointerCancel={tabSwipe.onPointerCancel}
+        onClickCapture={tabSwipe.onClickCapture}>
         {categoriesLoading ? (
           <div className="flex justify-center py-12"><Loader className="w-8 h-8 spinner" /></div>
         ) : !categoriesReady ? (

@@ -16,6 +16,7 @@ import { IChevR, IClock, IHeart, ILogout, IRefresh, IScan, ISettings, IStar, IUs
 import { tr } from "../../shared/i18n";
 import { triggerHaptic } from "../../shared/lib/haptics";
 import { useTabSwipe } from "../../shared/ui/hooks/useTabSwipe";
+import { registerOverlayBack } from "../../shared/lib/back";
 import TvQrSyncModal from "../settings/TvQrSyncModal";
 
 /* Account changes discard cached details synchronously, before another account can paint. */
@@ -204,16 +205,24 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
     const closeOnOutsidePress = (event: PointerEvent) => {
       if (!filterMenuRef.current?.contains(event.target as Node)) setFilterMenuOpen(false);
     };
+    const isCovered = () => !filterMenuRef.current || Boolean(filterMenuRef.current.closest("[inert]"));
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || event.isComposing || isCovered()) return;
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       setFilterMenuOpen(false);
       filterButtonRef.current?.focus();
     };
+    const removeBack = registerOverlayBack(() => {
+      if (isCovered()) return false;
+      setFilterMenuOpen(false);
+      filterButtonRef.current?.focus();
+      return true;
+    });
     document.addEventListener("pointerdown", closeOnOutsidePress, true);
     document.addEventListener("keydown", closeOnEscape, true);
     return () => {
+      removeBack();
       document.removeEventListener("pointerdown", closeOnOutsidePress, true);
       document.removeEventListener("keydown", closeOnEscape, true);
     };
@@ -221,7 +230,7 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
 
   useEffect(() => {
     setFilterMenuOpen(false);
-  }, [tab, favKind]);
+  }, [tab, favKind, active]);
 
   useEffect(() => {
     if (!capabilities.posts && favKind === "post") setFavKind("video");
@@ -327,7 +336,14 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
       }
     };
 
+    const clearClickSuppression = () => {
+      window.clearTimeout(suppressTimer);
+      suppressTimer = 0;
+      suppressClick = false;
+    };
+
     const onTouchStart = (event: TouchEvent) => {
+      clearClickSuppression();
       if (pullRefreshingRef.current || event.touches.length !== 1 || scroller.scrollTop > 1 || !inRefreshRegion(event.target)) {
         tracking = false;
         return;
@@ -352,7 +368,13 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
       finishGesture(false);
     };
 
+    const onTouchCancel = () => {
+      if (activePointerId !== null) return;
+      finishGesture(true);
+    };
+
     const onPointerDown = (event: PointerEvent) => {
+      clearClickSuppression();
       if (event.pointerType === "touch" || !event.isPrimary || event.button !== 0) return;
       if (pullRefreshingRef.current || scroller.scrollTop > 1 || !inRefreshRegion(event.target)) return;
       tracking = true;
@@ -394,7 +416,7 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
     region.addEventListener("touchstart", onTouchStart, { passive: true });
     region.addEventListener("touchmove", onTouchMove, { passive: false });
     region.addEventListener("touchend", onTouchEnd, { passive: true });
-    region.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    region.addEventListener("touchcancel", onTouchCancel, { passive: true });
     region.addEventListener("pointerdown", onPointerDown);
     region.addEventListener("click", onClickCapture, true);
     return () => {
@@ -403,7 +425,7 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
       region.removeEventListener("touchstart", onTouchStart);
       region.removeEventListener("touchmove", onTouchMove);
       region.removeEventListener("touchend", onTouchEnd);
-      region.removeEventListener("touchcancel", onTouchEnd);
+      region.removeEventListener("touchcancel", onTouchCancel);
       region.removeEventListener("pointerdown", onPointerDown);
       region.removeEventListener("click", onClickCapture, true);
     };
