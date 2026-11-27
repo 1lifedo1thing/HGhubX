@@ -759,7 +759,7 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
         )}
 
         {/* 我的内容 */}
-        <SegmentedControl className="mt-4 shrink-0 is-compact-desktop" aria-label={tr("我的内容")} activeIndex={tabIndex}>
+        <SegmentedControl className="mt-4 shrink-0" aria-label={tr("我的内容")} activeIndex={tabIndex}>
           {([["fav", tr("我的收藏")], ["history", tr("观看历史")]] as const).map(([k, l]) => (
             <Button aria-pressed={tab === k} key={k} onClick={() => { setTab(k); setSelectedIds([]); }}>{l}</Button>
           ))}

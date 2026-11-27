@@ -293,7 +293,7 @@ export default function Search({ active, wide }: { active: boolean; wide: boolea
         ) : (
           <>
             {capabilities.posts && (
-              <SegmentedControl className="mt-1 mb-3 is-compact-desktop" aria-label={tr("搜索结果类型")} activeIndex={tab === "video" ? 0 : 1}>
+              <SegmentedControl className="mt-1 mb-3" aria-label={tr("搜索结果类型")} activeIndex={tab === "video" ? 0 : 1}>
                 {([["video", tr("视频")], ["post", tr("帖子")]] as const).map(([k, label]) => (
                   <Button aria-pressed={tab === k} key={k} onClick={() => changeTab(k)}>{label}</Button>
                 ))}
@@ -420,7 +420,7 @@ export function RankPage({ onBack, wide }: { onBack: () => void; wide: boolean }
               {loading ? <Loader label={tr("正在更新榜单")} className="w-4 h-4" /> : <IRefresh size={18} />}
             </Button>
           </div>
-          <SegmentedControl className="mb-3 is-compact-desktop" aria-label={tr("榜单类型")} activeIndex={tabIndex}>
+          <SegmentedControl className="mb-3" aria-label={tr("榜单类型")} activeIndex={tabIndex}>
             {RANK_TABS.map((t) => (
               <Button aria-pressed={tab === t.k} key={t.k} onClick={() => setTab(t.k)}>{tr(t.label)}</Button>
             ))}
