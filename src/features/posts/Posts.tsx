@@ -393,8 +393,8 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
           </>
         )}
       </div>
-      <Sheet open={commentsOpen && active} onClose={() => setCommentsOpen(false)}>
-        <div className="flex flex-col" style={{ height: "72dvh" }}>
+      <Sheet open={commentsOpen && active} z="feed-panel-overlay" onClose={() => setCommentsOpen(false)}>
+        <div className="feed-comments-sheet">
           <CommentsPanel videoId={id} ep={1} total={currentPost?.counts?.comment ?? 0} kind="post" onClose={() => setCommentsOpen(false)} />
         </div>
       </Sheet>

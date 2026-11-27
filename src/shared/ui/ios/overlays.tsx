@@ -60,6 +60,16 @@ function syncBackground() {
   }
 }
 
+function activeLandscapeHost(): HTMLElement | null {
+  for (const el of document.querySelectorAll<HTMLElement>(".player-root.fs-landscape")) {
+    if (el.inert || el.getAttribute("aria-hidden") === "true") continue;
+    if (!el.getClientRects().length) continue;
+    if (el.closest("[hidden], .hidden, [inert]")) continue;
+    return el;
+  }
+  return null;
+}
+
 function DialogFrame({ open, onClose, children, kind, width, label, z, avoidNativeKeyboard }: {
   open: boolean; onClose: () => void; children: ReactNode;
   kind: "modal" | "sheet" | "guide"; width?: number; label: string; z?: string; avoidNativeKeyboard?: boolean;
@@ -73,7 +83,7 @@ function DialogFrame({ open, onClose, children, kind, width, label, z, avoidNati
   const descendants = useMemo(() => [...ancestors, token], [ancestors, token]);
   const close = useRef(onClose);
   close.current = onClose;
-  const host = getFullscreenElement() ?? document.querySelector<HTMLElement>(".player-root.fs-landscape") ?? document.getElementById("root") ?? document.body;
+  const host = getFullscreenElement() ?? activeLandscapeHost() ?? document.getElementById("root") ?? document.body;
   useEffect(() => {
     if (open) { setMounted(true); return; }
     const timeout = setTimeout(() => setMounted(false), motion ? 180 : 0);

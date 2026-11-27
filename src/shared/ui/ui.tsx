@@ -13,10 +13,12 @@ import { tr } from "../i18n";
 export function Avatar({ hue = 250, icon, name, size = 40, ring = false, className = "" }: {
   hue?: number; icon?: React.ReactNode; name?: string; size?: number; ring?: boolean; className?: string;
 }) {
+  const safeHue = Number.isFinite(hue) ? hue : 250;
+  const monogram = ((name || "").trim().replace(/^@+/, "")[0] || "H").toUpperCase();
   const inner = (
     <div className="w-full h-full rounded-full flex items-center justify-center overflow-hidden font-semibold"
-      style={{ background: `hsl(${hue} 22% 30%)`, color: `hsl(${hue} 70% 88%)` }}>
-      {icon ?? <span style={{ fontSize: size * 0.42 }} className="leading-none">{(name || "H").replace(/^@/, "")[0].toUpperCase()}</span>}
+      style={{ background: `hsl(${safeHue} 22% 30%)`, color: `hsl(${safeHue} 70% 88%)` }}>
+      {icon ?? <span style={{ fontSize: size * 0.42 }} className="leading-none">{monogram}</span>}
     </div>
   );
   return (

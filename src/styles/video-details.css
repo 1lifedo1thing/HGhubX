@@ -21,7 +21,12 @@
 .video-details-author-link.ios-button { display:flex; align-items:center; gap:10px; flex:1; min-width:120px; min-height:44px; text-align:left; }
 .video-details-follow.ios-button { flex:none; min-height:44px; padding:8px 14px; border-radius:999px; font-size:13px; font-weight:600; }
 .video-details-description { color:var(--p-mut); font-size:13px; line-height:1.8; white-space:pre-wrap; overflow-wrap:anywhere; }
-.video-details-sheet { display:flex; flex-direction:column; height:min(72dvh,680px); min-height:0; }.feed-comments-sheet { display:flex; flex-direction:column; height:72dvh; min-height:0; }
+.video-details-sheet { display:flex; flex-direction:column; height:min(72dvh,680px); min-height:0; }
+.feed-comments-sheet { display:flex; flex-direction:column; height:72dvh; min-height:0; }
+.ios-overlay-sheet.feed-panel-overlay .ios-dialog { background:var(--glass-bg-strong); padding-bottom:0; }
+.comment-composer-form.ios-form.flex { min-height:44px; background:var(--p-s3); border:1px solid var(--ios-edge); border-radius:999px; }
+.comment-composer-form.ios-form.flex>.ios-button.comment-send-btn { width:32px; height:32px; min-width:32px; min-height:32px; padding:0; }
+.comment-composer-form.ios-form.flex>.ios-button.comment-send-btn:disabled { opacity:.72; }
 .feed-article-sheet { display:flex; flex-direction:column; height:78dvh; min-height:0; }
 .mobile-video-meta-copy { padding-right:calc(var(--sar,0px) + 84px); padding-left:calc(var(--sal,0px) + 16px); }
 .mobile-video-author { margin-bottom:3px; color:rgb(255 255 255 / .76); font-size:12px; line-height:1.4; text-shadow:0 2px 8px rgb(0 0 0 / .65); }

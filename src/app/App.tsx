@@ -133,6 +133,7 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
   const pendingDragRef = useRef<{ pos: number; tabs: readonly Tab[] } | null>(null);
   const settleRafRef = useRef(0);
   const wasDraggingRef = useRef(false);
+  const dropPosRef = useRef(index);
   const [dragState, setDragState] = useState<{ active: boolean; previewIndex: number }>({
     active: false,
     previewIndex: index,
@@ -155,13 +156,16 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
       settleRafRef.current = 0;
     }
     if (justEndedDrag) {
-      // Wait one paint after removing .is-dragging so transition animates without forced reflow.
+      // Keep the dragged position on the frame .is-dragging is removed, then glide to target.
+      drop.style.transform = `translate3d(${dropPosRef.current * 100}%, 0, 0)`;
       settleRafRef.current = window.requestAnimationFrame(() => {
         settleRafRef.current = 0;
+        dropPosRef.current = index;
         if (dropRef.current) dropRef.current.style.transform = targetTransform;
       });
       return;
     }
+    dropPosRef.current = index;
     drop.style.transform = targetTransform;
   }, [dragState.active, index]);
 
@@ -170,6 +174,7 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
     const pending = pendingDragRef.current;
     if (!pending) return;
     pendingDragRef.current = null;
+    dropPosRef.current = pending.pos;
     if (dropRef.current) {
       dropRef.current.style.transform = `translate3d(${pending.pos * 100}%, 0, 0)`;
     }
@@ -211,7 +216,7 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
       drag.lastTime = now;
     }
     if (!drag.dragging) {
-      if (Math.abs(dx) < 6 || Math.abs(dx) < Math.abs(dy) * 1.1) return;
+      if (Math.abs(dx) < 10 || Math.abs(dx) < Math.abs(dy) * 1.1) return;
       drag.dragging = true;
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       swipe.startDrag(drag.startIndex, tabKeys);
@@ -242,7 +247,11 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
       window.cancelAnimationFrame(dragRafRef.current);
       dragRafRef.current = 0;
     }
-    pendingDragRef.current = null;
+    if (drag.dragging && pendingDragRef.current) {
+      flushDragFrame();
+    } else {
+      pendingDragRef.current = null;
+    }
     if (drag.dragging) {
       try {
         if (e.currentTarget.hasPointerCapture(e.pointerId)) {
@@ -289,7 +298,7 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
         onPointerUp={(e) => finishDrag(e, false)}
         onPointerCancel={(e) => finishDrag(e, true)}
         onClickCapture={onClickCapture}>
-      <div ref={dropRef} className={`hg-drop${dragState.active ? " is-dragging" : ""}`} aria-hidden="true" style={{ transform: `translate3d(${index * 100}%, 0, 0)` }}><LiquidIndicator /></div>
+      <div ref={dropRef} className={`hg-drop${dragState.active ? " is-dragging" : ""}`} aria-hidden="true"><LiquidIndicator /></div>
       <div className="ios-mobile-nav-items">
         {items.map(({ key, label, Icon, Active }, i) => {
           const isHighlighted = previewIndex === i;
@@ -297,7 +306,6 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
           return <Button key={key} className="ios-mobile-nav-item"
             data-preview={dragState.active && isHighlighted ? "true" : undefined}
             onClick={() => {
-              swipe.clearSuppress();
               if (key === "home" && tab === "home") {
                 window.dispatchEvent(new Event("hg:home-refresh"));
                 return;
@@ -312,6 +320,8 @@ function TabBar({ swipe }: { swipe: TabSwipeBridge }) {
                 window.dispatchEvent(new Event("hg:profile-reset"));
                 return;
               }
+              if (key === tab) return;
+              swipe.clearSuppress();
               setTab(key);
             }}
             aria-current={tab === key ? "page" : undefined}>
@@ -467,13 +477,25 @@ function MainTabs({ wide, pageActive, covered, bottomInset, swipe }: {
   availableTabsRef.current = availableTabs;
   const availableTabsKey = availableTabs.join(",");
 
+  const wasCoveredRef = useRef(covered);
+  const [restoredTab, setRestoredTab] = useState<Tab | null>(null);
+  useLayoutEffect(() => {
+    const returnedFromCover = wasCoveredRef.current && !covered;
+    wasCoveredRef.current = covered;
+    if (returnedFromCover) setRestoredTab(tab);
+    else if (covered) setRestoredTab(null);
+  }, [covered, tab]);
+  useEffect(() => {
+    if (restoredTab && restoredTab !== tab) setRestoredTab(null);
+  }, [tab, restoredTab]);
+
   useLayoutEffect(() => {
     const currentSwipe = swipeRef.current;
-    if (!currentSwipe || covered) return;
+    if (!currentSwipe) return;
     const { phase, visibleTabs, targetIndex, fromPos, targetTab } = swipeVisual;
     const panes = currentSwipe.panesRef.current;
     const tabs = availableTabsRef.current;
-    if (phase === "idle") {
+    if (covered || phase === "idle") {
       for (const el of Object.values(panes)) {
         if (!el) continue;
         el.style.transition = "";
@@ -518,11 +540,12 @@ function MainTabs({ wide, pageActive, covered, bottomInset, swipe }: {
   const paneClass = (key: Tab) => {
     const isVisible = tab === key || inSwipeView(key);
     if (!isVisible) return "absolute inset-0 hidden pointer-events-none";
-    const bgClass = swiping ? (key === "home" ? "bg-black overflow-hidden" : "bg-bg overflow-hidden") : "";
+    const bgClass = key === "home" ? "bg-black overflow-hidden" : "bg-bg overflow-hidden";
     const activeClass = key === "home" ? "" : "ios-tab-active";
+    const suppressAnim = swipeVisual.suppressAnimTab === key || restoredTab === key || (wasCoveredRef.current && !covered);
     const swipeClass = swiping
       ? "ios-tab-pane-swiping"
-      : swipeVisual.suppressAnimTab === key
+      : suppressAnim
         ? "ios-tab-pane-settled"
         : "";
     const pointerClass = swiping || tab !== key ? "pointer-events-none" : "";
@@ -535,10 +558,10 @@ function MainTabs({ wide, pageActive, covered, bottomInset, swipe }: {
   // DialogFrame's syncBackground() owns modal inertness so portals inside fullscreenElement never inherit ancestor inert.
   return (
     <LayerBox hidden={covered} inert={covered} ariaHidden={covered} className="absolute inset-0">
-      <div ref={setPaneRef("home")} data-tab-pane="home" className={paneClass("home")} inert={covered || tab !== "home"} aria-hidden={!pageActive || tab !== "home"}>{mounted("home") && <Home key={sourceScope} active={pageActive && tab === "home" && !swiping} bottomInset={bottomInset} />}</div>
-      <div ref={setPaneRef("search")} data-tab-pane="search" className={paneClass("search")} inert={covered || tab !== "search"} aria-hidden={!pageActive || tab !== "search"}>{mounted("search") && <Suspense fallback={<PageLoading />}><Search key={sourceScope} active={pageActive && tab === "search" && !swiping} wide={wide} /></Suspense>}</div>
-      <div ref={setPaneRef("category")} data-tab-pane="category" className={paneClass("category")} inert={covered || tab !== "category"} aria-hidden={!pageActive || tab !== "category"}>{mounted("category") && <Suspense fallback={<PageLoading />}><Category key={sourceScope} wide={wide} active={pageActive && tab === "category" && !swiping} /></Suspense>}</div>
-      <div ref={setPaneRef("profile")} data-tab-pane="profile" className={paneClass("profile")} inert={covered || tab !== "profile"} aria-hidden={!pageActive || tab !== "profile"}>{mounted("profile") && <Suspense fallback={<PageLoading />}><Profile wide={wide} active={pageActive && tab === "profile" && !swiping} /></Suspense>}</div>
+      <div ref={setPaneRef("home")} data-tab-pane="home" data-visited={visited.has("home") ? "true" : undefined} className={paneClass("home")} inert={covered || tab !== "home"} aria-hidden={!pageActive || tab !== "home"}>{mounted("home") && <Home key={sourceScope} active={pageActive && tab === "home" && !swiping} bottomInset={bottomInset} />}</div>
+      <div ref={setPaneRef("search")} data-tab-pane="search" data-visited={visited.has("search") ? "true" : undefined} className={paneClass("search")} inert={covered || tab !== "search"} aria-hidden={!pageActive || tab !== "search"}>{mounted("search") && <Suspense fallback={<PageLoading />}><Search key={sourceScope} active={pageActive && tab === "search" && !swiping} wide={wide} /></Suspense>}</div>
+      <div ref={setPaneRef("category")} data-tab-pane="category" data-visited={visited.has("category") ? "true" : undefined} className={paneClass("category")} inert={covered || tab !== "category"} aria-hidden={!pageActive || tab !== "category"}>{mounted("category") && <Suspense fallback={<PageLoading />}><Category key={sourceScope} wide={wide} active={pageActive && tab === "category" && !swiping} /></Suspense>}</div>
+      <div ref={setPaneRef("profile")} data-tab-pane="profile" data-visited={visited.has("profile") ? "true" : undefined} className={paneClass("profile")} inert={covered || tab !== "profile"} aria-hidden={!pageActive || tab !== "profile"}>{mounted("profile") && <Suspense fallback={<PageLoading />}><Profile wide={wide} active={pageActive && tab === "profile" && !swiping} /></Suspense>}</div>
     </LayerBox>
   );
 }
@@ -613,11 +636,6 @@ function AppBody() {
       const reducedMotion = typeof window !== "undefined"
         && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       if (!targetTab || reducedMotion || Math.abs(fromPos - targetIndex) < 0.002) {
-        for (const el of Object.values(tabSwipePanesRef.current)) {
-          if (!el) continue;
-          el.style.transition = "";
-          el.style.transform = "";
-        }
         const next: TabSwipeVisual = { ...IDLE_TAB_SWIPE, suppressAnimTab: targetTab };
         tabSwipeVisualRef.current = next;
         setTabSwipeVisual(next);
@@ -641,11 +659,7 @@ function AppBody() {
     },
     finishSettle() {
       if (tabSwipeVisualRef.current.phase !== "settling") return;
-      for (const el of Object.values(tabSwipePanesRef.current)) {
-        if (!el) continue;
-        el.style.transition = "";
-        el.style.transform = "";
-      }
+      // Do not clear pane transforms before React hides outgoing panes; useLayoutEffect cleans up post-commit.
       const next: TabSwipeVisual = {
         ...IDLE_TAB_SWIPE,
         suppressAnimTab: tabSwipeVisualRef.current.targetTab,
@@ -664,11 +678,6 @@ function AppBody() {
 
   useEffect(() => {
     if ((stack.length > 0 || fs || clean || locked) && tabSwipeVisualRef.current.phase !== "idle") {
-      for (const el of Object.values(tabSwipePanesRef.current)) {
-        if (!el) continue;
-        el.style.transition = "";
-        el.style.transform = "";
-      }
       tabSwipeVisualRef.current = IDLE_TAB_SWIPE;
       setTabSwipeVisual(IDLE_TAB_SWIPE);
     }
