@@ -52,6 +52,13 @@ if (!cargo.includes('git = "https://github.com/richerfu/tauri"')) {
   );
 }
 
+// Cargo 解析锁文件时会求值全部 target 依赖；桌面端 deep-link / single-instance 依赖 crates.io tauri ^2.12，
+// 与 OpenHarmony 分支的 tauri v2.10.3 触发 native links = "Tauri" 冲突，且 OHOS 构建不编译该段。
+cargo = cargo.replace(
+  /\n?\[target\.'cfg\(not\(any\(target_os = "android", target_os = "ios", target_env = "ohos"\)\)\)'\.dependencies\][\s\S]*?(?=\n\[)/,
+  "",
+);
+
 if (!cargo.includes('[target.\'cfg(target_env = "ohos")\'.dependencies]')) {
   const ohosDeps = `[target.'cfg(target_env = "ohos")'.dependencies]
 napi-ohos = "1.2"
