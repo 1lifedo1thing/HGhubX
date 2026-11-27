@@ -140,8 +140,8 @@ export default function SettingsPage(){
             <button data-tv-focus="src-try-demo" disabled={busy} onClick={()=>void run(async()=>{await api.sourceImport(buildDemoOfflinePackageJson(),true);setSources(await api.sourceState());window.dispatchEvent(new Event("hg:line-changed"));window.dispatchEvent(new Event("hg:source-changed"));},"已启用离线示例源")}>试用离线示例源</button>
           )}
         </div>
-        <div data-tv-region="source-list" data-tv-columns="1" style={{marginTop:10}}>
-          {(sources?.sources||[]).map(src=><div key={src.id} className="tv-setting-row" style={{flexWrap:"wrap",gap:8,marginTop:8}}>
+        <div className="tv-source-list" style={{display:"flex",flexDirection:"column",gap:"0.5rem",marginTop:10}}>
+          {(sources?.sources||[]).map(src=><div key={src.id} className="tv-setting-row" data-tv-region={`source-row-${src.id}`} style={{flexWrap:"wrap",gap:8,marginTop:8}}>
             <span>{src.name} v{src.version}{isDemoOfflineSource(src)?" · 示例":""}{src.active?" · 使用中":""}</span>
             {src.active
               ?<button data-tv-focus={`src-off-${src.id}`} disabled={busy} onClick={()=>void run(async()=>{setSources(await api.sourceActivate(null));window.dispatchEvent(new Event("hg:line-changed"));},"已停用")}>停用</button>
