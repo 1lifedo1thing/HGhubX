@@ -17,6 +17,7 @@ const tests = [
   ["channel-swipe", "scripts/test-channel-swipe.mjs"],
   ["posts-tabs", "scripts/test-posts-tabs.mjs"],
   ["category-hitbox", "scripts/test-category-hitbox.mjs"],
+  ["haptic-tap", "scripts/test-haptic-tap.mjs"],
   ["metric-sort", "scripts/test-metric-sort.mjs"],
   ["home-controls", "tests/test-home-controls.mjs"],
   ["rank-swipe", "scripts/test-rank-swipe.mjs"],
