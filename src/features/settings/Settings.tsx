@@ -502,7 +502,7 @@ export default function Settings({ onBack, initialSection }: { onBack: () => voi
             </Button>
           </>)}
 
-          <div className="text-center text-[12px] text-dim mt-5">{tr("HGhubX {0} · {1} 客户端", APP_VERSION, platform === "android" ? "Android" : platform === "ios" ? "iOS" : platform === "macos" ? "macOS" : platform === "linux" ? "Linux" : "Windows")}</div>
+          <div className="text-center text-[12px] text-dim mt-5">{tr("HGhubX {0} · {1} 客户端", APP_VERSION, platform === "android" ? "Android" : platform === "ios" ? "iOS" : platform === "harmony" ? "HarmonyOS" : platform === "macos" ? "macOS" : platform === "linux" ? "Linux" : "Windows")}</div>
         </div>
       </div>
 

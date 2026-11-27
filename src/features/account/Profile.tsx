@@ -953,7 +953,7 @@ function ProfileContent({ wide, active }: { wide: boolean; active: boolean }) {
           {hasMore && <div ref={sentinelRef} className="h-4" aria-hidden="true" />}
         </div>
 
-        <div className="shrink-0 text-center text-[12px] text-dim mt-5">{tr("HGhubX {0} · {1} 客户端", APP_VERSION, platform === "android" ? "Android" : platform === "ios" ? "iOS" : platform === "macos" ? "macOS" : platform === "linux" ? "Linux" : "Windows")}</div>
+        <div className="shrink-0 text-center text-[12px] text-dim mt-5">{tr("HGhubX {0} · {1} 客户端", APP_VERSION, platform === "android" ? "Android" : platform === "ios" ? "iOS" : platform === "harmony" ? "HarmonyOS" : platform === "macos" ? "macOS" : platform === "linux" ? "Linux" : "Windows")}</div>
         </div>
       </div>
       <Modal open={removeOpen} onClose={() => { if (!removalPending.current) setRemoveOpen(false); }} label={tr("批量移除")}>

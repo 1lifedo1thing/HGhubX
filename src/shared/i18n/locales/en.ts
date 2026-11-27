@@ -934,6 +934,18 @@ const en: Record<string, string> = {
   "增强强度": "Enhancement strength",
   "标准": "Standard",
   "极强": "Extreme",
+  "{0}（{1}）": "{0} ({1})",
+  "请求过于频繁（HTTP 429），请稍后再试": "Too many requests (HTTP 429); please try again later",
+  "代理连接异常，请检查设置中的代理配置": "Proxy connection failed; check proxy settings",
+  "请求超时，请检查网络或切换线路": "Request timed out; check your network or switch line",
+  "域名解析失败，请检查网络或切换线路": "DNS lookup failed; check your network or switch line",
+  "安全连接握手失败，请检查代理、系统时间或切换线路": "Secure connection handshake failed; check proxy, system time, or switch line",
+  "网络连接失败，请检查网络或切换线路": "Network connection failed; check your network or switch line",
+  "请求被安全策略拦截，请检查线路、代理或视频源配置": "Request blocked by security policy; check line, proxy, or source settings",
+  "请求重定向异常，请切换线路或稍后重试": "Request redirect error; switch line or try again later",
+  "视频源脚本执行超时，请稍后重试": "Video source script timed out; please try again later",
+  "视频源返回数据异常，请重试或更新视频源": "Invalid data returned by video source; retry or update the source",
+  "视频源执行异常，请重试或更新视频源": "Video source error; retry or update the source",
 };
 
 export default en;
