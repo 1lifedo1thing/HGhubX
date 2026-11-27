@@ -8,7 +8,7 @@ import { mediaHost, mediaResource, observeHls, registerHlsVersion, usePlayerDiag
 import { usePlaybackActivity } from "./usePlaybackActivity";
 import { useProxyPlaybackRecovery } from "./useProxyPlaybackRecovery";
 import { createHlsRecovery, type HlsRecovery } from "./hlsRecovery";
-import AmbientGlow from "./AmbientGlow";
+import AmbientGlow, { isAmbientGlowSupported } from "./AmbientGlow";
 import { superResolutionRequested, superResolutionVariant, type SuperResolutionVariant } from "./superResolutionRequest";
 import { PICTURE_ENHANCE_PROFILES } from "./pictureEnhanceProfiles";
 import { useStore } from "../../shared/model/store";
@@ -347,9 +347,11 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
     onError?.(mediaErrorMessage(videoRef.current?.error ?? null));
   };
 
+  const showAmbientGlow = ambientGlow && isAmbientGlowSupported();
+
   return (
     <div className="relative isolate h-full w-full">
-      {ambientGlow && active && <AmbientGlow videoRef={videoRef} active={active} />}
+      {showAmbientGlow && active && <AmbientGlow videoRef={videoRef} active={active} />}
       {SuperResolutionCanvas && active && (
         <SuperResolutionCanvas videoRef={videoRef} fit={fit} active={active}
           enabled={superResolution} variant={activeSuperResolutionVariant}
@@ -367,7 +369,7 @@ const VideoSurface = forwardRef<VideoHandle, Props>(function VideoSurface(
         muted={muted}
         loop={loop}
         onClick={onClick}
-        className={`relative z-[1] w-full h-full ${ambientGlow ? "bg-transparent" : "bg-black"} ${fit === "cover" ? "object-cover" : "object-contain"} ${className}`}
+        className={`relative z-[1] w-full h-full ${showAmbientGlow ? "bg-transparent" : "bg-black"} ${fit === "cover" ? "object-cover" : "object-contain"} ${className}`}
         style={fadeIn ? { opacity: ready ? 1 : 0, transition: "opacity .35s" } : undefined}
         onLoadedData={(e) => {
           const v = e.target as HTMLVideoElement;
