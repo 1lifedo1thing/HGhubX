@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button } from "./ios/controls";
-import { ISort, ISortAsc, ISortDesc } from "./icons";
+import { ICheck, ISort, ISortAsc, ISortDesc } from "./icons";
 import { tr } from "../i18n";
 import { registerOverlayBack } from "../lib/back";
 import { videoSortLabel, VIDEO_SORT_METRICS, type VideoSortDirection, type VideoSortMetric } from "../model/videoSort";
@@ -129,6 +129,7 @@ export function VideoSortMenu({ value, direction, onChange, className = "" }: {
           <button type="button" role="menuitemradio" aria-checked={value === DEFAULT_SORT}
             onClick={() => apply(DEFAULT_SORT)}>
             <span>{tr("默认排序")}</span>
+            {value === DEFAULT_SORT && <span className="ios-sort-dir" aria-hidden="true"><ICheck size={14} strokeWidth={2.2} /></span>}
           </button>
           {VIDEO_SORT_METRICS.map(metric => {
             const itemDirection = value === metric ? direction : "desc";

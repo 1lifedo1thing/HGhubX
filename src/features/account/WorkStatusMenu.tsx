@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Button } from "../../shared/ui/ios/controls";
-import { IChevronDown } from "../../shared/ui/icons";
+import { ICheck, IChevronDown } from "../../shared/ui/icons";
 import { N_, tr } from "../../shared/i18n";
 import { registerOverlayBack } from "../../shared/lib/back";
 
@@ -117,10 +117,14 @@ export function WorkStatusMenu({ status, counts, total, onChange, className = ""
       <span className="ios-sort-menu-title">{tr("作品状态筛选")}</span>
       {OPTIONS.map(option => {
         const count = option.value === "all" ? total : option.value === "finished" ? counts?.finished : counts?.ongoing;
+        const checked = status === option.value;
         return <button key={option.value} type="button" role="menuitemradio" data-work-status-option={option.value}
-          aria-checked={status === option.value} onClick={() => select(option.value)}>
+          aria-checked={checked} onClick={() => select(option.value)}>
           <span>{tr(option.label)}</span>
-          {count !== undefined && <span className="ml-auto text-[12px] font-normal text-mut tabular-nums">{count}</span>}
+          <span className="ml-auto inline-flex items-center gap-1.5 tabular-nums">
+            {checked && <ICheck size={13} strokeWidth={2.2} aria-hidden="true" />}
+            {count !== undefined && <span className="text-[12px] font-normal opacity-80">{count}</span>}
+          </span>
         </button>;
       })}
     </div>}

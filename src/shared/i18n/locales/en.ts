@@ -289,7 +289,6 @@ const en: Record<string, string> = {
   "帖子内容预览": "Posts Preview",
   "帖子加载失败": "Failed to load posts",
   "帖子加载失败：{0}": "Failed to load posts: {0}",
-  "帖子{0}": "Posts{0}",
   "应用中可能展示第三方提供的内容、标签、封面及媒体地址。相关内容的权利属于各自权利人；本应用的可访问性不代表你已获得复制、下载或传播授权。你应仅访问有权访问的内容，不得侵犯著作权、隐私权及其他合法权益。本项目采用 PolyForm Noncommercial 1.0.0 许可；使用和再分发须遵守该许可及其他适用授权，本协议不额外授予商业使用权。": "The app may display third-party content, tags, covers, and media streams. All rights belong to their respective owners; accessibility in the app does not grant rights to copy, download, or redistribute. Only access content you are authorized to view. This project is licensed under PolyForm Noncommercial 1.0.0; no commercial rights are granted.",
   "应用尚未启动": "App has not finished starting",
   "应用尚未进入主界面，你可以直接关闭窗口。": "The main window has not loaded yet; you can close the window directly.",
@@ -946,6 +945,13 @@ const en: Record<string, string> = {
   "视频源脚本执行超时，请稍后重试": "Video source script timed out; please try again later",
   "视频源返回数据异常，请重试或更新视频源": "Invalid data returned by video source; retry or update the source",
   "视频源执行异常，请重试或更新视频源": "Video source error; retry or update the source",
+  "向左滚动": "Scroll left",
+  "向右滚动": "Scroll right",
+  "屏蔽已暂停": "Blocking paused",
+  "已屏蔽 {0} 个标签": "{0} blocked tags",
+  "未设置屏蔽": "No blocked tags",
+  "详细日志已开启": "Detailed logs on",
+  "仅基础日志": "Basic logs only",
 };
 
 export default en;

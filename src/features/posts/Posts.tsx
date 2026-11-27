@@ -8,7 +8,7 @@ import { ACTION_TOAST_SLOT, useStore } from "../../shared/model/store";
 import { copyText } from "../../shared/lib/clipboard";
 import { Empty, Img, Sheet } from "../../shared/ui/ui";
 import { Player } from "../playback";
-import { IBack, ICommentF, IFireF, IFlame, IHeart, IHeartF, IPlayF, ISearch, IStar, IStarF } from "../../shared/ui/icons";
+import { IBack, IComment, IFireF, IFlame, IHeart, IHeartF, IPlayF, ISearch, IStar, IStarF } from "../../shared/ui/icons";
 import { handleArticleClick, parseInternalVideoId, sanitizeHtml } from "../../shared/lib/html";
 import { InplaceSearch } from "../search/InplaceSearch";
 import { FilteredContent } from "../../shared/ui/FilteredContent";
@@ -264,17 +264,17 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
   </div>;
 
   return (
-    <div className="ios-page absolute inset-0 bg-bg flex flex-col">
+    <div className="ios-page is-post-detail-page absolute inset-0 bg-bg flex flex-col">
       <div className="ios-subpage-header shrink-0" style={{ paddingTop: isMobile ? "var(--sat, 0px)" : 0 }}>
         <div className="ios-subpage-bar">
-          <Button aria-label={tr("返回")} onClick={onBack} className="ios-nav-btn"><IBack size={20} /></Button>
+          <Button aria-label={tr("返回")} onClick={onBack} className={`ios-nav-btn ${isMobile ? "" : "-ml-2.5"}`}><IBack size={20} /></Button>
           <span className="text-[16px] font-bold text-on">{tr("图文详情")}</span>
-          <Button disabled={!currentPost} onClick={() => { if (active && allowed) setTagMenu(true); }} className="ml-auto -mr-2 px-2.5 min-h-9 inline-flex items-center justify-end text-[13px] font-medium text-primary">{tr("不感兴趣")}</Button>
+          <Button disabled={!currentPost} onClick={() => { if (active && allowed) setTagMenu(true); }} className="ml-auto -mr-2 px-2.5 min-h-9 inline-flex items-center justify-end text-[13px] font-medium text-mut hover:text-on">{tr("不感兴趣")}</Button>
         </div>
       </div>
 
-      <div role="progressbar" aria-label={tr("阅读进度")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={readProgress} className="h-1 shrink-0 bg-s3 overflow-hidden"><div className="h-full bg-primary" style={{ width: `${readProgress}%` }} /></div>
-      <div ref={scrollRef} data-post-scroll className="flex-1 scroll-y pb-8 !px-0" onScroll={event => {
+      <div role="progressbar" aria-label={tr("阅读进度")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={readProgress} className="h-[2px] shrink-0 bg-transparent overflow-hidden"><div className="h-full bg-primary transition-[width] duration-100" style={{ width: `${readProgress}%` }} /></div>
+      <div ref={scrollRef} data-post-scroll className={`flex-1 scroll-y pb-8 ${isMobile ? "!px-0" : "pt-4"}`} onScroll={event => {
         const el = event.currentTarget;
         const range = el.scrollHeight - el.clientHeight;
         setReadProgress(range > 0 ? Math.round(el.scrollTop / range * 100) : 100);
@@ -285,7 +285,7 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
           <div className="flex justify-center py-12"><Loader className="w-8 h-8 spinner" /></div>
         ) : (
           <>
-            <div data-post-media className="relative w-full bg-black mx-auto" style={{ height: isMobile ? "min(48vh, 420px)" : "min(60vh, 640px)" }}>
+            <div data-post-media className={`relative w-full bg-black mx-auto ${isMobile ? "" : "rounded-[20px] overflow-hidden"}`} style={{ height: isMobile ? "min(48vh, 420px)" : "min(56vh, 560px)" }}>
               {play && src ? (
                 <Player src={src} scopeKey={id} poster={cover(currentPost.cover)} autoPlay active={active && !tagMenu && !commentsOpen} controls muted={muted} volume={volume}
                   ambientGlow={ambientGlow} balanceVolume={isMobile && balanceVolume}
@@ -322,8 +322,8 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
                   ))}
                 </div>
               )}
-            <div className="px-4 pt-3.5 mx-auto max-w-[800px] select-text">
-              <h1 className="text-[17px] font-bold text-on leading-snug">{currentPost.title}</h1>
+            <div className={`${isMobile ? "px-4 pt-3.5" : "px-0 pt-5"} select-text`}>
+              <h1 className={`${isMobile ? "text-[18px]" : "text-[22px]"} font-bold text-on leading-snug`}>{currentPost.title}</h1>
               <div className="flex items-center gap-2 mt-2 text-[12px] text-mut">
                 {(() => {
                   const postTime = formatPostTime(currentPost);
@@ -331,15 +331,15 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
                 })()}
                 <span className="flex items-center gap-1"><IFireF size={10} />{fmt(postHot(currentPost))}</span>
               </div>
-              <div className="flex flex-wrap gap-1.5 mt-2.5">
+              <div className="flex flex-wrap gap-2 mt-3">
                 {(currentPost.tags || []).slice(0, 8).map((t) => (
                   <Button key={t} onClick={() => push({ kind: "tag", tag: t, name: t })}
-                    className="inline-flex items-center justify-center min-h-0 h-7 px-2.5 rounded-(--r-ctl) bg-s3 text-[12px] text-on/85 hover:bg-s4 pressable">
+                    className="ios-post-tag inline-flex items-center justify-center rounded-(--r-ctl) bg-s3 text-on/90 hover:bg-s4 pressable">
                     #{t}
                   </Button>
                 ))}
               </div>
-              <div className="mt-3.5 flex flex-wrap items-center gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
                 {(() => {
                   const liked = isLiked(id, 1, "post");
                   const fav = isFav(id, "post");
@@ -352,7 +352,7 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
                       void setLiked("post", id, 1, !liked)
                         .then(() => toast(!liked ? tr("已加入喜欢") : tr("已取消喜欢"), !liked ? "heart" : "info", ACTION_TOAST_SLOT))
                         .catch(e => toast(e instanceof Error ? e.message : tr("操作失败"), "info", ACTION_TOAST_SLOT));
-                    }} className="h-9 px-3.5 rounded-full bg-s2 flex items-center gap-1.5 text-[13px] text-on pressable">
+                    }} className="ios-filter-pill ios-post-action pressable">
                       {liked ? <IHeartF size={15} className="text-neon" /> : <IHeart size={15} />}
                       <span>{likeCount > 0 ? fmt(likeCount) : tr("喜欢")}</span>
                     </Button>
@@ -360,15 +360,15 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
                       void setCollected("post", id, !fav)
                         .then(() => toast(!fav ? tr("已收藏") : tr("已取消收藏"), !fav ? "star" : "info", ACTION_TOAST_SLOT))
                         .catch(e => toast(e instanceof Error ? e.message : tr("操作失败"), "info", ACTION_TOAST_SLOT));
-                    }} className="h-9 px-3.5 rounded-full bg-s2 flex items-center gap-1.5 text-[13px] text-on pressable">
+                    }} className="ios-filter-pill ios-post-action pressable">
                       {fav ? <IStarF size={15} className="text-amber" /> : <IStar size={15} />}
                       <span>{favCount > 0 ? fmt(favCount) : tr("收藏")}</span>
                     </Button>
                     {capabilities.detail.comments && (() => {
                       const commentTotal = loadedComments?.id === id ? loadedComments.total : postCommentCount(currentPost);
                       return (
-                        <Button onClick={() => setCommentsOpen(true)} className="h-9 px-3.5 rounded-full bg-s2 flex items-center gap-1.5 text-[13px] text-on pressable">
-                          <ICommentF size={14} />
+                        <Button onClick={() => setCommentsOpen(true)} className="ios-filter-pill ios-post-action pressable">
+                          <IComment size={15} />
                           <span>{commentTotal > 0 ? fmt(commentTotal) : tr("评论")}</span>
                         </Button>
                       );

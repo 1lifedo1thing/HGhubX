@@ -369,7 +369,7 @@ export function FeedPlayerShellChrome({
                 )}
                 <Button onClick={() => setPanel(null)} aria-label={tr("关闭")}
                   className="ios-icon-button">
-                  <IClose size={14} />
+                  <IClose size={15} />
                 </Button>
               </div>
 
