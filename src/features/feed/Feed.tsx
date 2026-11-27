@@ -320,7 +320,7 @@ export default function Feed({
         tags: post?.tags || [],
         score: 0,
         like: post?.counts?.like ?? 0,
-        comment: post?.counts?.comment ?? 0,
+        comment: Number(post?.counts?.comment) || Number(post?.comment_count) || 0,
         collect: post?.counts?.collect ?? 0,
         episodes: [] as Episode[],
       }
@@ -333,7 +333,7 @@ export default function Feed({
         tags: detail?.tags || [],
         score: detail?.score || 0,
         like: detail?.counts?.like ?? 0,
-        comment: detail?.counts?.comment ?? 0,
+        comment: Number(detail?.counts?.comment) || Number(detail?.comment_count) || 0,
         collect: detail?.counts?.collect ?? 0,
         episodes: detail?.episodes || [],
       };

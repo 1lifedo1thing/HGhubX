@@ -58,8 +58,8 @@ export function EpisodesPanel({ episodes, current, onPick, onClose, bare = false
 }
 
 /* ================= 评论 ================= */
-export function CommentsPanel({ videoId, ep, total, kind = "video", onClose }: {
-  videoId: number; ep: number; total: number; kind?: "video" | "post"; onClose: () => void;
+export function CommentsPanel({ videoId, ep, total, kind = "video", onClose, onTotalChange }: {
+  videoId: number; ep: number; total: number; kind?: "video" | "post"; onClose: () => void; onTotalChange?: (total: number) => void;
 }) {
   const { user, setLoginOpen, toast, accountScope, lineEpoch, capabilities } = useStore();
   const [items, setItems] = useState<Comment[]>([]);
@@ -73,6 +73,8 @@ export function CommentsPanel({ videoId, ep, total, kind = "video", onClose }: {
   const [sending, setSending] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const itemsRef = useRef<Comment[]>([]);
+  itemsRef.current = items;
   const loadSequence = useRef(0);
   const loadBusy = useRef(false);
   const sendBusy = useRef(false);
@@ -82,6 +84,8 @@ export function CommentsPanel({ videoId, ep, total, kind = "video", onClose }: {
   currentScope.current = scope;
   const alive = useRef(true);
 
+  const onTotalChangeRef = useRef(onTotalChange);
+  onTotalChangeRef.current = onTotalChange;
   const load = useCallback(async (p: number) => {
     if (p > 1 && loadBusy.current) return;
     const token = ++loadSequence.current;
@@ -94,15 +98,24 @@ export function CommentsPanel({ videoId, ep, total, kind = "video", onClose }: {
       if (!alive.current || token !== loadSequence.current || currentScope.current !== scope) return;
       const rawItems = Array.isArray(res) ? res : (res?.items || []);
       const incoming = rawItems.map((x) => ({ ...x, text: commentText(x.text) }));
-      setItems((prev) => {
-        const base = p === 1 ? [] : prev;
-        const seen = new Set(base.map((x) => x.id).filter((id) => id !== undefined && id !== null));
-        return [...base, ...incoming.filter((x) => x.id === undefined || x.id === null || !seen.has(x.id))];
-      });
+      const base = p === 1 ? [] : itemsRef.current;
+      const seen = new Set(base.map((x) => x.id).filter((id) => id !== undefined && id !== null));
+      const merged = [...base, ...incoming.filter((x) => x.id === undefined || x.id === null || !seen.has(x.id))];
+      itemsRef.current = merged;
+      setItems(merged);
       setPage(p);
-      setPages(res?.pagination?.pages || 1);
-      const count = res?.pagination?.total;
-      if (typeof count === "number" && Number.isFinite(count) && count >= 0) setLoadedTotal(count);
+      setPages(Number(res?.pagination?.pages) || 1);
+      const rawTotal = res?.pagination?.total;
+      const parsedTotal = rawTotal === null || rawTotal === undefined || String(rawTotal).trim() === "" ? Number.NaN : Number(rawTotal);
+      const effectiveTotal = Number.isFinite(parsedTotal) && parsedTotal > 0
+        ? Math.max(parsedTotal, merged.length)
+        : merged.length > 0
+          ? Math.max(total, merged.length)
+          : (Number.isFinite(parsedTotal) && parsedTotal === 0 ? 0 : null);
+      if (effectiveTotal !== null) {
+        setLoadedTotal(effectiveTotal);
+        onTotalChangeRef.current?.(effectiveTotal);
+      }
     } catch (e) {
       if (alive.current && token === loadSequence.current && currentScope.current === scope) {
         setError((e as Error).message || tr("加载失败，请重试")); setRetryPage(p);
@@ -147,7 +160,7 @@ export function CommentsPanel({ videoId, ep, total, kind = "video", onClose }: {
     <div className="flex flex-col h-full min-h-0">
       <div className="shrink-0 flex items-center gap-2 px-4 py-2.5 min-h-[52px] border-b border-[var(--ios-edge)]">
         <span className="text-[14px] font-bold text-on">{tr("评论")}</span>
-        <span className="text-[12px] text-mut">{fmt(loadedTotal ?? total)}{kind === "video" ? tr(" · 第 {0} 集", ep) : tr(" 条")}</span>
+        <span className="text-[12px] text-mut">{fmt(Math.max(loadedTotal ?? total, items.length))}{kind === "video" ? tr(" · 第 {0} 集", ep) : tr(" 条")}</span>
         <Button onClick={onClose} aria-label={tr("关闭")} className="ml-auto w-9 h-9 !min-w-9 !min-h-9 p-0 rounded-full bg-s3 border border-[var(--ios-edge)] flex items-center justify-center text-on/80 pressable">
           <IClose size={13} />
         </Button>

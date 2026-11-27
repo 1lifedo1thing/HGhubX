@@ -16,7 +16,7 @@ import { TagBlockMenu } from "../../shared/ui/TagBlockMenu";
 import { useContentPreferences } from "../../shared/model/contentPreferences";
 import { usePaginatedList } from "../../shared/lib/usePaginatedList";
 import { CommentsPanel } from "../feed/Panels";
-import { formatPostTime, postHot } from "./postData";
+import { formatPostTime, postCommentCount, postHot } from "./postData";
 import { tr } from "../../shared/i18n";
 
 /* ================= 帖子列表 ================= */
@@ -167,6 +167,7 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
   const autoBackKey = useRef("");
   const [tagMenu, setTagMenu] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [loadedComments, setLoadedComments] = useState<{ id: number; total: number } | null>(null);
   useEffect(() => { if (!active) { setTagMenu(false); setCommentsOpen(false); } }, [active]);
   const currentPost = loadedId === id ? post : null;
   const blocked = filtering && currentPost ? blockReason(currentPost.tags) : null;
@@ -375,12 +376,15 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
                       {fav ? <IStarF size={15} className="text-amber" /> : <IStar size={15} />}
                       <span>{favCount > 0 ? fmt(favCount) : tr("收藏")}</span>
                     </Button>
-                    {capabilities.detail.comments && (
-                      <Button onClick={() => setCommentsOpen(true)} className="h-9 px-3.5 rounded-full bg-s2 flex items-center gap-1.5 text-[13px] text-on pressable">
-                        <ICommentF size={14} />
-                        <span>{currentPost.counts?.comment ? fmt(currentPost.counts.comment) : tr("评论")}</span>
-                      </Button>
-                    )}
+                    {capabilities.detail.comments && (() => {
+                      const commentTotal = loadedComments?.id === id ? loadedComments.total : postCommentCount(currentPost);
+                      return (
+                        <Button onClick={() => setCommentsOpen(true)} className="h-9 px-3.5 rounded-full bg-s2 flex items-center gap-1.5 text-[13px] text-on pressable">
+                          <ICommentF size={14} />
+                          <span>{commentTotal > 0 ? fmt(commentTotal) : tr("评论")}</span>
+                        </Button>
+                      );
+                    })()}
                   </>;
                 })()}
               </div>
@@ -395,7 +399,8 @@ export function PostDetail({ id, onBack, active = true }: { id: number; onBack: 
       </div>
       <Sheet open={commentsOpen && active} z="feed-panel-overlay" onClose={() => setCommentsOpen(false)}>
         <div className="feed-comments-sheet">
-          <CommentsPanel videoId={id} ep={1} total={currentPost?.counts?.comment ?? 0} kind="post" onClose={() => setCommentsOpen(false)} />
+          <CommentsPanel videoId={id} ep={1} total={loadedComments?.id === id ? loadedComments.total : postCommentCount(currentPost)} kind="post"
+            onTotalChange={(count) => setLoadedComments({ id, total: count })} onClose={() => setCommentsOpen(false)} />
         </div>
       </Sheet>
       <TagBlockMenu open={tagMenu && active} tags={currentPost?.tags || []} onClose={() => setTagMenu(false)} onSettings={() => push({ kind: "settings", section: "内容偏好" })} />

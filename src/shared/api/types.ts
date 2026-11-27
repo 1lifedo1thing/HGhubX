@@ -40,6 +40,7 @@ export type Detail = {
   total_episodes: number;
   episodes: Episode[];
   counts: { collect: number; comment: number; hot: number; like: number };
+  comment_count?: number | string;
   author: Author & { is_following?: boolean; following?: number; like_count?: number };
   interaction?: { collected: boolean; liked: boolean; liked_ep?: number };
   video_url?: string;
@@ -119,6 +120,7 @@ export type Post = {
   video_id?: number;
   author?: { id: number; name: string; avatar?: string; is_following?: boolean };
   counts?: { like: number; comment: number; collect: number; share?: number; hot?: number };
+  comment_count?: number | string;
   created_at?: string | number;
   publish_time?: string | number;
   published_at?: string | number;
