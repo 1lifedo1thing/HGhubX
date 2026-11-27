@@ -26,7 +26,7 @@ export function EpisodesPanel({ episodes, current, onPick, onClose, bare = false
     activeEl?.scrollIntoView({ block: "nearest" });
   }, [current, asc, episodes.length]);
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {bare ? (
         <div className="shrink-0 flex items-center gap-2 px-4 pb-2">
           <span className="text-[12px] text-mut">{tr("共 {0} 集", episodes.length)}</span>
@@ -42,7 +42,7 @@ export function EpisodesPanel({ episodes, current, onPick, onClose, bare = false
           </Button>
         </div>
       )}
-      <div ref={gridRef} className="flex-1 scroll-y px-4 pb-4">
+      <div ref={gridRef} className="flex-1 min-h-0 scroll-y px-4 pb-4">
         <div className="grid grid-cols-4 gap-2">
           {list.map((e) => (
             <Button key={e.ep_num} aria-current={e.ep_num === current ? "true" : undefined} onClick={() => onPick(e.ep_num)}

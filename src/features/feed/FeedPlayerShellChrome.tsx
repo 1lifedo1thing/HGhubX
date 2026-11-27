@@ -375,7 +375,7 @@ export function FeedPlayerShellChrome({
 
               {panel === "detail" || (panel === "episodes" && capabilities.detail.episodes) ? (
                 capabilities.detail.episodes ? (
-                  <PanelSwipeArea panel={panel} onChange={setPanel}>
+                  <PanelSwipeArea panel={panel} onChange={setPanel} rotated={rotated} allowPullDownClose={!landscapeStage}>
                     <Suspense fallback={<PanelFallback />}>
                       {panel === "episodes" ? (
                         <EpisodesPanel bare videoId={curId} episodes={episodes} current={curEp} onPick={pickEp} onClose={() => setPanel(null)} />

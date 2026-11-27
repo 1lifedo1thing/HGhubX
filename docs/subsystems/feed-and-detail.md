@@ -151,6 +151,8 @@ Feed 负责列表播放页的条目位置、详情/帖子读取、标签门、�
   `useFeedViewport` 在播放区滚动容器上注册非被动 `wheel` 监听（`{ passive: false }`），按位移阈值与冷却时间将
   滚轮/触控板纵向滚动转为单步 `stepDir`，避免浏览器原生纵向滚动直接切到下一部剧；底部控制栏「下一集 ↓ / 下一部 ↓」
   按钮同样遵循 `swipeEp` 开关。
+- 详情/选集双栏抽屉滑动与横屏旋转态（[`src/features/feed/PanelSwipeArea.tsx`](../../src/features/feed/PanelSwipeArea.tsx)、[`src/features/feed/FeedPlayerShellChrome.tsx`](../../src/features/feed/FeedPlayerShellChrome.tsx)、[`src/index.css`](../../src/index.css)、[`src/styles/video-details.css`](../../src/styles/video-details.css)）：`PanelSwipeArea` 接入 `rotated`（并兜底检测 `.fs-landscape` 祖先）把 90° 顺时针旋转舞台的屏幕位移换算回面板局部坐标（`dx = rawDy, dy = -rawDx`），锁定主轴方向、横向切 tab 时 `preventDefault()` 并抑制尾随 click，`touchcancel` 中止手势不误切；右侧横屏抽屉传 `allowPullDownClose={!landscapeStage}` 防止顶部下滑误关。在 `.fs-landscape` 下 Chromium 按物理轴评估 `overscroll-behavior` 与单轴 `overflow-*-hidden`，因此 `.fs-landscape .scroll-x` 与 `.fs-landscape .current-video-tags` 对调为 `overscroll-behavior-x: auto; overscroll-behavior-y: contain`，且不给 `.scroll-y`/`.scroll-x` 加反轴 `overflow-*-hidden`，确保详情滚到「相关推荐」后仍可流畅回滑且横向轮播正常。
+- 帖子与评论时间戳归一化（[`src/shared/lib/time.ts`](../../src/shared/lib/time.ts) 与 [`src/features/posts/postData.ts`](../../src/features/posts/postData.ts)）：`formatTimestamp` 仅接受 `2000-01-01` 至 `Date.now() + 5 分钟` 窗口内的有效日历时间，对 Unix 秒/毫秒、ISO-8601（含带空格时区偏移）、无时区本地日期时间、中文年月日、RFC-2822 与「N小时后」等未来相对文案均拒绝未来时间；`formatPostTime` 跳过未来 `publish_time` 自动回退 `created_at` 或隐藏无效占位。
 
 ## 验证命令
 
